@@ -1,0 +1,202 @@
+<html lang="en-US">
+<head>
+	<script type="text/javascript" src="ocrad.js"></script>
+	<script type="text/javascript" src="gocr.js"></script>
+	<style type="text/css">
+		html, body {
+			margin: 0;
+			padding: 0;
+		}
+		canvas {
+			display: block;
+			margin: 0 auto;
+			border: 0px;
+			position: fixed;
+			top: 100px;
+			right: 20px;
+			width: 320px;
+			height: 320px;
+			border: 1px solid black;
+		}
+		textarea {
+			display: block;
+			margin: auto;
+			font-size: 30px;
+			-webkit-box-sizing: content-box;
+		  -moz-box-sizing: content-box;
+		  box-sizing: content-box;
+		  border: none;
+		  font: normal 100%/normal Arial, Helvetica, sans-serif;
+		  color: rgba(10,9,9,1);
+		  -o-text-overflow: clip;
+		  text-overflow: clip;
+		  background: -webkit-linear-gradient(0deg, rgba(0,0,0,0) 79px, rgb(171,206,212) 79px, rgb(171,206,212) 81px, rgba(0,0,0,0) 81px), -webkit-linear-gradient(90deg, rgb(238,238,238) 0.1em, rgba(0,0,0,0) 0.1em), rgba(255,252,244,1);
+		  background: -moz-linear-gradient(90deg, rgba(0,0,0,0) 79px, rgb(171,206,212) 79px, rgb(171,206,212) 81px, rgba(0,0,0,0) 81px), -moz-linear-gradient(0deg, rgb(238,238,238) 0.1em, rgba(0,0,0,0) 0.1em), rgba(255,252,244,1);
+		  background: linear-gradient(90deg, rgba(0,0,0,0) 79px, rgb(171,206,212) 79px, rgb(171,206,212) 81px, rgba(0,0,0,0) 81px), linear-gradient(0deg, rgb(238,238,238) 0.1em, rgba(0,0,0,0) 0.1em), rgba(255,252,244,1);
+		  background-position: auto auto;
+		  -webkit-background-origin: padding-box;
+		  background-origin: padding-box;
+		  -webkit-background-clip: border-box;
+		  background-clip: border-box;
+		  -webkit-background-size: 100% 1.2em;
+		  background-size: 100% 1.2em;
+		  height: 600px;
+		  width: calc(100% - 100px);
+		  outline: none;
+		  padding-left: 100px;
+		}
+		h1 {
+			text-align: center;
+			background-color: rgba(10,9,9,1);
+			color: #FFF;
+			padding: 10px;
+			font-family: 'Crete Round';
+			border-bottom: 5px solid rgba(10,9,9,0.1);
+			margin: 0px;
+		}
+		h1 span {
+			font-style: italic;
+		}
+		#modeMsg {
+			position: fixed;
+			top: 70px;
+			right: 20px;
+			text-align: center;
+			width: 320px;
+			font-family: 'Crete Round';
+			font-style: italic;
+			font-size: 20px;
+		}
+	</style>
+	<link href="https://fonts.googleapis.com/css?family=Crete+Round" rel="stylesheet">
+	<title>ScribeBuddy: notes</title>
+</head>
+<body>
+	<h1 id="logo">ScribeBuddy: <span>notes</span></h1>
+	<span id="modeMsg">Press alt to use the pen</span>
+  <canvas width="32" height="32"></canvas>
+  <textarea id="output"></textarea>
+  <script type="text/javascript">
+		const RADIUS = 2;
+		const movementScale = 0.2;
+
+		var penMode = 0;
+
+		function swapMode() {
+			if(penMode == 0) {
+				penMode = 1;
+				document.getElementById('modeMsg').innerText = "Press alt to use the keyboard";
+			}
+			else {
+				penMode = 0;
+				document.getElementById('modeMsg').innerText = "Press alt to use the pen";
+			}
+		}
+
+		document.onkeydown = function(e) {
+			if(e.keyCode == 18) {
+				swapMode();
+			}
+			saveNote();
+		}
+
+		window.onload = function() {
+			if(localStorage.note) {
+				document.getElementById('output').value = localStorage.note;
+			}
+		}
+
+		function saveNote() {
+			localStorage.note = document.getElementById('output').value;
+		}
+
+		var canvas = document.querySelector('canvas');
+		var ctx = canvas.getContext('2d');
+		var x = -30;
+		var y = -30;
+
+		function resetPos() {
+			x = canvas.width/2;
+			y = canvas.height/2;
+			updatePosition();
+			ctx.clearRect(0,0,canvas.width,canvas.height);
+		}
+
+		function canvasDraw() {
+			ctx.fillStyle = "#f00";
+			ctx.beginPath();
+			ctx.arc(x, y, RADIUS, 0, 2*Math.PI, true);
+			ctx.fill();
+		}
+		canvasDraw();
+
+		canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
+		document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
+
+		document.onmousedown = function() {
+			if(penMode == 1){
+				canvas.requestPointerLock();
+				resetPos();
+				document.addEventListener("mousemove", movedMouse, false);
+			}
+		}
+
+		document.onmouseup = function() {
+			if(penMode == 1) {
+				document.exitPointerLock();
+				Aditya(getAsBinary());
+				resetPos();
+				document.removeEventListener("mousemove", movedMouse, false);
+			}
+		}
+
+		var animation;
+		function movedMouse(e) {
+  		x += (e.movementX*movementScale);
+  		y += (e.movementY*movementScale);
+  		updatePosition();
+		}
+		function updatePosition() {
+			if (x > canvas.width + RADIUS) x = -RADIUS;
+  		if (y > canvas.height + RADIUS) y = -RADIUS;
+  		if (x < -RADIUS) x = canvas.width + RADIUS;
+  		if (y < -RADIUS) y = canvas.height + RADIUS;
+  		if (!animation) {
+  			animation = requestAnimationFrame(function() {
+  				animation = null;
+  				canvasDraw();
+  			});
+  		}
+  	}
+
+  	function getAsBinary() {
+			var imgdata = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+			var res = [];
+			for(var i=0;i<(imgdata.length/4);i++) {
+				if(imgdata[4*i] == 255) res.push(1);
+				else res.push(0);
+			}
+			return res.join("");
+		}
+
+		function httpGet(url, callback) {
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.onreadystatechange = function() {
+				if(xmlHttp.readyState == 4 && xmlHttp.status == 200) callback(xmlHttp);
+			}
+			xmlHttp.open("GET", url, true);
+			xmlHttp.send(null);
+		}
+
+		// activate Parmar's Postulate
+		function Aditya(binary) {
+			httpGet('/api/classify?source='+ binary, function(x) {
+				console.log(x.responseText);
+				if(x.responseText == "_") document.getElementById("output").value += " ";
+				else document.getElementById("output").value += x.responseText;
+				saveNote();
+			});
+		}
+	</script>
+</body>
+</html>

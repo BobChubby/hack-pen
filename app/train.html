@@ -10,12 +10,40 @@
 			margin: 0 auto;
 			border: 1px solid black;
 			background-color: black;
+			height: 384px;
+			width: 384px;
+		}
+		#hint {
+			text-align: center;
+		}
+		#controls {
+			display: block;
+		}
+		#controls button {
+			display: block;
+			margin: auto;
+			padding: 10px;
 		}
 	</style>
 </head>
 <body>
-  <canvas width="100" height="100"></canvas>
+  <canvas width="32" height="32"></canvas>
+  <h1 id="hint">...</h1>
+  <div id="controls">
+  	<button onclick="saveSession()">Save Session</button>
+  	<button onclick="loadSession()">Load Session</button>
+  	<button onclick="finishTraining()">Finish Training</button>
+  </div>
   <script type="text/javascript">
+  	//the array for the uppercase and lowercase letters, and special characters
+  	var inputs = [ '+', '~'];
+
+  	var currentCharIndex = 0;
+  	const maxTrains = 5;
+  	var currentTrains = 0;
+
+  	document.getElementById('hint').innerText = inputs[currentCharIndex];
+
 		const RADIUS = 2;
 		const movementScale = 0.2;
 
@@ -42,15 +70,15 @@
 		canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
 		document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
 
-		document.onmousedown = function() {
+		canvas.onmousedown = function() {
 			canvas.requestPointerLock();
 			resetPos();
 			document.addEventListener("mousemove", movedMouse, false);
 		}
 
-		document.onmouseup = function() {
+		canvas.onmouseup = function() {
 			document.exitPointerLock();
-			console.log(getAsBinary());
+			sendTrainingData('a', getAsBinary());
 			resetPos();
 			document.removeEventListener("mousemove", movedMouse, false);
 		}
@@ -83,6 +111,34 @@
 				else res.push(0);
 			}
 			return res;
+		}
+
+		function httpGet(url) {
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.open("GET", url, true);
+			xmlHttp.send(null);
+		}
+
+		function sendTrainingData(character, binary) {
+			currentTrains++;
+			httpGet('/api/train?target='+ inputs[currentCharIndex] +'&source='+ binary.join(""));
+			if(currentTrains>=maxTrains) {
+				currentTrains = 0;
+				currentCharIndex++;
+				document.getElementById('hint').innerText = inputs[currentCharIndex];
+			}
+		}
+
+		function saveSession() {
+			httpGet('/api/save');
+		}
+
+		function loadSession() {
+			httpGet('/api/save');
+		}
+
+		function finishTraining() {
+			httpGet('/api/done');
 		}
 	</script>
 </body>

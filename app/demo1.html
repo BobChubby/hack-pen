@@ -1,0 +1,117 @@
+<html lang="en-US">
+<head>
+	<script type="text/javascript" src="ocrad.js"></script>
+	<script type="text/javascript" src="gocr.js"></script>
+	<style type="text/css">
+		html, body {
+			margin: 0;
+			padding: 0;
+		}
+		canvas {
+			display: block;
+			margin: 0 auto;
+			border: 1px solid black;
+			background-color: black;
+		}
+		textarea {
+			display: block;
+			margin: auto;
+		}
+	</style>
+</head>
+<body>
+  <canvas width="100" height="100"></canvas>
+  <textarea cols="60" rows="5" id="output"></textarea>
+  <script type="text/javascript">
+		const RADIUS = 2;
+		const movementScale = 0.2;
+
+		var canvas = document.querySelector('canvas');
+		var ctx = canvas.getContext('2d');
+		var x = 0;
+		var y = 0;
+
+		function resetPos() {
+			x = canvas.width/2;
+			y = canvas.height/2;
+			updatePosition();
+			ctx.clearRect(0,0,canvas.width,canvas.height);
+		}
+
+		function canvasDraw() {
+			ctx.fillStyle = "#f00";
+			ctx.beginPath();
+			ctx.arc(x, y, RADIUS, 0, 2*Math.PI, true);
+			ctx.fill();
+		}
+		canvasDraw();
+
+		canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
+		document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
+
+		document.onmousedown = function() {
+			canvas.requestPointerLock();
+			resetPos();
+			document.addEventListener("mousemove", movedMouse, false);
+		}
+
+		document.onmouseup = function() {
+			document.exitPointerLock();
+			Aditya(getAsBinary());
+			resetPos();
+			document.removeEventListener("mousemove", movedMouse, false);
+		}
+
+		var animation;
+		function movedMouse(e) {
+  		x += (e.movementX*movementScale);
+  		y += (e.movementY*movementScale);
+  		updatePosition();
+		}
+		function updatePosition() {
+			if (x > canvas.width + RADIUS) x = -RADIUS;
+  		if (y > canvas.height + RADIUS) y = -RADIUS;
+  		if (x < -RADIUS) x = canvas.width + RADIUS;
+  		if (y < -RADIUS) y = canvas.height + RADIUS;
+  		if (!animation) {
+  			animation = requestAnimationFrame(function() {
+  				animation = null;
+  				canvasDraw();
+  			});
+  		}
+  	}
+
+  	function getAsBinary() {
+			var imgdata = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+			var res = [];
+			for(var i=0;i<(imgdata.length/4);i++) {
+				if(imgdata[4*i] == 255) res.push(1);
+				else res.push(0);
+			}
+			return res;
+		}
+
+		function httpGet(url, callback) {
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.onreadystatechange = function() {
+				if(xmlHttp.readyState == 4 && xmlHttp.status == 200) callback(xmlHttp);
+			}
+			xmlHttp.open("GET", url, true);
+			xmlHttp.send(null);
+		}
+
+		// activate Parmar's Postulate
+		function Aditya(binary) {
+			// console.log(OCRAD(ctx.getImageData(0,0,canvas.width,canvas.height).data))
+			var guess = GOCR(ctx.getImageData(0,0,canvas.width,canvas.height)).split("")[0];
+			if(guess == "_") {
+				guess = " ";
+			}
+			document.getElementById("output").value += guess;
+			// httpGet('/api/classify?source='+ binary, function(x) {
+			// 	console.log(x.responseText);
+			// });
+		}
+	</script>
+</body>
+</html>
