@@ -36,7 +36,9 @@
   </div>
   <script type="text/javascript">
   	//the array for the uppercase and lowercase letters, and special characters
-  	var inputs = [ '+', '~'];
+  	var inputs = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V','W', 'X', 'Y', 'Z',
+  								'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v','w', 'x', 'y', 'z',
+  								'_', ',', '.'];
 
   	var currentCharIndex = 0;
   	const maxTrains = 5;
@@ -125,7 +127,15 @@
 			if(currentTrains>=maxTrains) {
 				currentTrains = 0;
 				currentCharIndex++;
-				document.getElementById('hint').innerText = inputs[currentCharIndex];
+				if(currentCharIndex >= inputs.length) {
+					finishTraining();
+					saveSession();
+					alert("Great! Let's go to your notebook.");
+					window.location = '/app/classify.html';
+				}
+				else {
+					document.getElementById('hint').innerText = inputs[currentCharIndex];
+				}
 			}
 		}
 

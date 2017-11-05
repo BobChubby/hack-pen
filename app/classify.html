@@ -84,10 +84,12 @@
 
 		function swapMode() {
 			if(penMode == 0) {
+				canvas.requestPointerLock();
 				penMode = 1;
 				document.getElementById('modeMsg').innerText = "Press alt to use the keyboard";
 			}
 			else {
+				document.exitPointerLock();
 				penMode = 0;
 				document.getElementById('modeMsg').innerText = "Press alt to use the pen";
 			}
@@ -135,7 +137,6 @@
 
 		document.onmousedown = function() {
 			if(penMode == 1){
-				canvas.requestPointerLock();
 				resetPos();
 				document.addEventListener("mousemove", movedMouse, false);
 			}
@@ -143,7 +144,6 @@
 
 		document.onmouseup = function() {
 			if(penMode == 1) {
-				document.exitPointerLock();
 				Aditya(getAsBinary());
 				resetPos();
 				document.removeEventListener("mousemove", movedMouse, false);
